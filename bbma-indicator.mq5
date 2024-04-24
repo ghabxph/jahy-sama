@@ -179,30 +179,6 @@ int OnCalculate(
     MA9LowBuffer[i] = SimpleMA(i, 9, low);
     MA10LowBuffer[i] = SimpleMA(i, 10, low);
     BollingerBand(i, 20, 2, close, TopBBBuffer[i], LowBBBuffer[i]);
-
-    BBMA(
-      i,
-      high,
-      low,
-      close,
-      EMA50Buffer[i],
-      previousEma50,
-      MA5HighBuffer[i],
-      MA6HighBuffer[i],
-      MA7HighBuffer[i],
-      MA8HighBuffer[i],
-      MA9HighBuffer[i],
-      MA10HighBuffer[i],
-      MA5LowBuffer[i],
-      MA6LowBuffer[i],
-      MA7LowBuffer[i],
-      MA8LowBuffer[i],
-      MA9LowBuffer[i],
-      MA10LowBuffer[i],
-      TopBBBuffer[i],
-      MidBBBuffer[i],
-      LowBBBuffer[i]
-    );
   }
   return(rates_total);
 }
@@ -260,8 +236,8 @@ double SimpleMA(const int position,const int period,const double &price[]) {
   if (period>0 && period<=(position+1)) {
     for (int i=0; i<period; i++) {
       result+=price[position-i];
-      result/=period;
     }
+    result/=period;
   }
   return(result);
 }
