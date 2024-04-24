@@ -122,126 +122,177 @@ double         MA10LowBuffer[];
 double         TopBBBuffer[];
 double         MidBBBuffer[];
 double         LowBBBuffer[];
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
-int OnInit()
-  {
-//--- indicator buffers mapping
-   SetIndexBuffer(0,EMA50Buffer,INDICATOR_DATA);
-   SetIndexBuffer(1,MA5HighBuffer,INDICATOR_DATA);
-   SetIndexBuffer(2,MA6HighBuffer,INDICATOR_DATA);
-   SetIndexBuffer(3,MA7HighBuffer,INDICATOR_DATA);
-   SetIndexBuffer(4,MA8HighBuffer,INDICATOR_DATA);
-   SetIndexBuffer(5,MA9HighBuffer,INDICATOR_DATA);
-   SetIndexBuffer(6,MA10HighBuffer,INDICATOR_DATA);
-   SetIndexBuffer(7,MA5LowBuffer,INDICATOR_DATA);
-   SetIndexBuffer(8,MA6LowBuffer,INDICATOR_DATA);
-   SetIndexBuffer(9,MA7LowBuffer,INDICATOR_DATA);
-   SetIndexBuffer(10,MA8LowBuffer,INDICATOR_DATA);
-   SetIndexBuffer(11,MA9LowBuffer,INDICATOR_DATA);
-   SetIndexBuffer(12,MA10LowBuffer,INDICATOR_DATA);
-   SetIndexBuffer(13,TopBBBuffer,INDICATOR_DATA);
-   SetIndexBuffer(14,MidBBBuffer,INDICATOR_DATA);
-   SetIndexBuffer(15,LowBBBuffer,INDICATOR_DATA);
-   
-//---
-   return(INIT_SUCCEEDED);
-  }
+int OnInit(){
+  SetIndexBuffer(0,EMA50Buffer,INDICATOR_DATA);
+  SetIndexBuffer(1,MA5HighBuffer,INDICATOR_DATA);
+  SetIndexBuffer(2,MA6HighBuffer,INDICATOR_DATA);
+  SetIndexBuffer(3,MA7HighBuffer,INDICATOR_DATA);
+  SetIndexBuffer(4,MA8HighBuffer,INDICATOR_DATA);
+  SetIndexBuffer(5,MA9HighBuffer,INDICATOR_DATA);
+  SetIndexBuffer(6,MA10HighBuffer,INDICATOR_DATA);
+  SetIndexBuffer(7,MA5LowBuffer,INDICATOR_DATA);
+  SetIndexBuffer(8,MA6LowBuffer,INDICATOR_DATA);
+  SetIndexBuffer(9,MA7LowBuffer,INDICATOR_DATA);
+  SetIndexBuffer(10,MA8LowBuffer,INDICATOR_DATA);
+  SetIndexBuffer(11,MA9LowBuffer,INDICATOR_DATA);
+  SetIndexBuffer(12,MA10LowBuffer,INDICATOR_DATA);
+  SetIndexBuffer(13,TopBBBuffer,INDICATOR_DATA);
+  SetIndexBuffer(14,MidBBBuffer,INDICATOR_DATA);
+  SetIndexBuffer(15,LowBBBuffer,INDICATOR_DATA);
+  return(INIT_SUCCEEDED);
+}
 //+------------------------------------------------------------------+
 //| Custom indicator iteration function                              |
 //+------------------------------------------------------------------+
-int OnCalculate(const int rates_total,
-                const int prev_calculated,
-                const datetime &time[],
-                const double &open[],
-                const double &high[],
-                const double &low[],
-                const double &close[],
-                const long &tick_volume[],
-                const long &volume[],
-                const int &spread[])
-  {
-//---
+int OnCalculate(
+  const int rates_total,
+  const int prev_calculated,
+  const datetime &time[],
+  const double &open[],
+  const double &high[],
+  const double &low[],
+  const double &close[],
+  const long &tick_volume[],
+  const long &volume[],
+  const int &spread[]
+) {
+  int length = ArraySize(close);
+  double previousEma50 = close[0];
+  for (int i = 1; i < length; i++) {
+    EMA50Buffer[i] = ExponentialMA(i, 50, previousEma50, close);
+    previousEma50 = EMA50Buffer[i];
+    MidBBBuffer[i] = SimpleMA(i, 20, close);
+    MA5HighBuffer[i] = SimpleMA(i, 5, high);
+    MA6HighBuffer[i] = SimpleMA(i, 6, high);
+    MA7HighBuffer[i] = SimpleMA(i, 7, high);
+    MA8HighBuffer[i] = SimpleMA(i, 8, high);
+    MA9HighBuffer[i] = SimpleMA(i, 9, high);
+    MA10HighBuffer[i] = SimpleMA(i, 10, high);
+    MA5LowBuffer[i] = SimpleMA(i, 5, low);
+    MA6LowBuffer[i] = SimpleMA(i, 6, low);
+    MA7LowBuffer[i] = SimpleMA(i, 7, low);
+    MA8LowBuffer[i] = SimpleMA(i, 8, low);
+    MA9LowBuffer[i] = SimpleMA(i, 9, low);
+    MA10LowBuffer[i] = SimpleMA(i, 10, low);
+    BollingerBand(i, 20, 2, close, TopBBBuffer[i], LowBBBuffer[i]);
 
-   int length = ArraySize(close);
-   double previousEma50 = close[0];
-
-   for (int i = 1; i < length; i++) {
-      EMA50Buffer[i] = ExponentialMA(i, 50, previousEma50, close);
-      previousEma50 = EMA50Buffer[i];
-      MidBBBuffer[i] = SimpleMA(i, 20, close);
-      MA5HighBuffer[i] = SimpleMA(i, 5, high);
-      MA6HighBuffer[i] = SimpleMA(i, 6, high);
-      MA7HighBuffer[i] = SimpleMA(i, 7, high);
-      MA8HighBuffer[i] = SimpleMA(i, 8, high);
-      MA9HighBuffer[i] = SimpleMA(i, 9, high);
-      MA10HighBuffer[i] = SimpleMA(i, 10, high);
-      MA5LowBuffer[i] = SimpleMA(i, 5, low);
-      MA6LowBuffer[i] = SimpleMA(i, 6, low);
-      MA7LowBuffer[i] = SimpleMA(i, 7, low);
-      MA8LowBuffer[i] = SimpleMA(i, 8, low);
-      MA9LowBuffer[i] = SimpleMA(i, 9, low);
-      MA10LowBuffer[i] = SimpleMA(i, 10, low);
-      BollingerBand(i, 20, 2, close, TopBBBuffer[i], LowBBBuffer[i]);
-   }
-
-//--- return value of prev_calculated for next call
-   return(rates_total);
+    BBMA(
+      i,
+      high,
+      low,
+      close,
+      EMA50Buffer[i],
+      previousEma50,
+      MA5HighBuffer[i],
+      MA6HighBuffer[i],
+      MA7HighBuffer[i],
+      MA8HighBuffer[i],
+      MA9HighBuffer[i],
+      MA10HighBuffer[i],
+      MA5LowBuffer[i],
+      MA6LowBuffer[i],
+      MA7LowBuffer[i],
+      MA8LowBuffer[i],
+      MA9LowBuffer[i],
+      MA10LowBuffer[i],
+      TopBBBuffer[i],
+      MidBBBuffer[i],
+      LowBBBuffer[i]
+    );
   }
+  return(rates_total);
+}
+
 //+------------------------------------------------------------------+
+//| BBMA                                                             |
+//+------------------------------------------------------------------+
+void BBMA(
+  const int index,
+  const double &high[],
+  const double &low[], 
+  const double &close[],
+  double &ema50,
+  double &previousEma50,
+  double &ma5High,
+  double &ma6High,
+  double &ma7High,
+  double &ma8High,
+  double &ma9High,
+  double &ma10High,
+  double &ma5Low,
+  double &ma6Low,
+  double &ma7Low,
+  double &ma8Low,
+  double &ma9Low,
+  double &ma10Low,
+  double &upperBb,
+  double &midBb,
+  double &lowerBb
+) {
+    ema50 = ExponentialMA(index, 50, previousEma50, close);
+    previousEma50 = ema50;
+    ma5High = SimpleMA(index, 5, high);
+    ma6High = SimpleMA(index, 6, high);
+    ma7High = SimpleMA(index, 7, high);
+    ma8High = SimpleMA(index, 8, high);
+    ma9High = SimpleMA(index, 9, high);
+    ma10High = SimpleMA(index, 10, high);
+    ma5Low = SimpleMA(index, 5, low);
+    ma6Low = SimpleMA(index, 6, low);
+    ma7Low = SimpleMA(index, 7, low);
+    ma8Low = SimpleMA(index, 8, low);
+    ma9Low = SimpleMA(index, 9, low);
+    ma10Low = SimpleMA(index, 10, low);
+    midBb = SimpleMA(index, 20, close);
+    BollingerBand(index, 20, 2, close, upperBb, lowerBb);
+}
+
 
 //+------------------------------------------------------------------+
 //| Simple Moving Average                                            |
 //+------------------------------------------------------------------+
-double SimpleMA(const int position,const int period,const double &price[])
-  {
-   double result=0.0;
-//--- check period
-   if(period>0 && period<=(position+1))
-     {
-      for(int i=0; i<period; i++)
-         result+=price[position-i];
-
+double SimpleMA(const int position,const int period,const double &price[]) {
+  double result=0.0;
+  if (period>0 && period<=(position+1)) {
+    for (int i=0; i<period; i++) {
+      result+=price[position-i];
       result/=period;
-     }
-
-   return(result);
+    }
   }
+  return(result);
+}
   
  //+------------------------------------------------------------------+
 //| Exponential Moving Average                                       |
 //+------------------------------------------------------------------+
-double ExponentialMA(const int position,const int period,const double prev_value,const double &price[])
-  {
-   double result=0.0;
-//--- check period
-   if(period>0)
-     {
-      double pr=2.0/(period+1.0);
-      result=price[position]*pr+prev_value*(1-pr);
-     }
-
-   return(result);
+double ExponentialMA(const int position,const int period,const double prev_value,const double &price[]) {
+  double result=0.0;
+  if (period>0) {
+    double pr=2.0/(period+1.0);
+    result=price[position]*pr+prev_value*(1-pr);
   }
+  return(result);
+}
 
 //+------------------------------------------------------------------+
 //| Calculate Bollinger Bands for a single bar using existing SMA    |
 //+------------------------------------------------------------------+
-void BollingerBand(int index, int maPeriod, double deviation, const double &price[], double &upperBand, double &lowerBand)
-  {
-    // Calculate the Simple Moving Average for the current bar
-    double sma = SimpleMA(index, maPeriod, price);
-    
-    // Calculate standard deviation
-    double variance = 0.0;
-    for(int j = index; j > index - maPeriod && j >= 0; j--)
-      {
-        variance += MathPow(price[j] - sma, 2);
-      }
-    double stDev = MathSqrt(variance / maPeriod); // Assume full period for simplicity
+void BollingerBand(int index, int maPeriod, double deviation, const double &price[], double &upperBand, double &lowerBand) {
+  // Calculate the Simple Moving Average for the current bar
+  double sma = SimpleMA(index, maPeriod, price);
 
-    // Calculate the upper and lower Bollinger Bands
-    upperBand = sma + (deviation * stDev);
-    lowerBand = sma - (deviation * stDev);
+  // Calculate standard deviation
+  double variance = 0.0;
+  for(int j = index; j > index - maPeriod && j >= 0; j--) {
+    variance += MathPow(price[j] - sma, 2);
   }
+  double stDev = MathSqrt(variance / maPeriod); // Assume full period for simplicity
+
+  // Calculate the upper and lower Bollinger Bands
+  upperBand = sma + (deviation * stDev);
+  lowerBand = sma - (deviation * stDev);
+}
