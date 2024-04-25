@@ -25,3 +25,12 @@
   - [ ] Quasimodo Pattern / Head and shoulder
   - [ ] QM Manipulation
 
+## Extreme
+
+**Candle is extreme if:**
+  * MA5/10 HIGH Breaking top BB
+    * MA5 High Breaking top BB is Extreme
+    * MA5 and MA10 High breaking top BB is Magic Extreme
+  * CSM immediately followed by bearish engulfing (Initial Break)
+    * Followed by TPW
+    * Followed by MHV (candle fails to close above BB)
