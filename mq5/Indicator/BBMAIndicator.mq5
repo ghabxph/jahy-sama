@@ -7,6 +7,7 @@
 #property link      "https://github.com/ghabxph/jahy-sama.git"
 #property version   "1.00"
 #include <JahySamaCore.mqh>
+#include <ChartObjects/ChartObjectsArrows.mqh>
 #property indicator_chart_window
 #property indicator_buffers 16
 #property indicator_plots   16
@@ -124,6 +125,9 @@ double         TopBBBuffer[];
 double         MidBBBuffer[];
 double         LowBBBuffer[];
 
+CChartObjectArrowDown MA5HighExtremes;
+datetime MA5HighExtremeTime[];
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
@@ -161,16 +165,29 @@ int OnCalculate(
   const long &volume[],
   const int &spread[]
 ) {
-  int length = ArraySize(close);
   double previousEma50 = close[0];
-  for (int index = 1; index < length; index++) {
-    BBMA(
-      index, high, low, close,
-      EMA50Buffer[index], previousEma50,
-      MA5HighBuffer[index], MA6HighBuffer[index], MA7HighBuffer[index], MA8HighBuffer[index], MA9HighBuffer[index], MA10HighBuffer[index],
-      MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
-      TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
-    );
+  ArrayResize(MA5HighExtremeTime, rates_total);
+  if (prev_calculated == 0) {
+    for (int index = 1; index < rates_total; index++) {
+      BBMA(
+        index, high, low, close,
+        EMA50Buffer[index], previousEma50,
+        MA5HighBuffer[index], MA6HighBuffer[index], MA7HighBuffer[index], MA8HighBuffer[index], MA9HighBuffer[index], MA10HighBuffer[index],
+        MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
+        TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
+      );
+      MarkMA5HighExtreme(index, MA5HighExtremeTime, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
+    }
   }
+  int index = rates_total - 1;
+  previousEma50 = EMA50Buffer[index - 1];
+  BBMA(
+    index, high, low, close,
+    EMA50Buffer[index], previousEma50,
+    MA5HighBuffer[index], MA6HighBuffer[index], MA7HighBuffer[index], MA8HighBuffer[index], MA9HighBuffer[index], MA10HighBuffer[index],
+    MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
+    TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
+  );
+  MarkMA5HighExtreme(index, MA5HighExtremeTime, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
   return(rates_total);
 }

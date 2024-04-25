@@ -6,6 +6,8 @@
 #property copyright "ghabxph"
 #property link      "https://github.com/ghabxph/jahy-sama.git"
 
+#include <ChartObjects/ChartObjectsArrows.mqh>
+
 //+------------------------------------------------------------------+
 //| BBMA                                                             |
 //+------------------------------------------------------------------+
@@ -94,4 +96,30 @@ void BollingerBand(int index, int maPeriod, double deviation, const double &pric
   // Calculate the upper and lower Bollinger Bands
   upperBand = sma + (deviation * stDev);
   lowerBand = sma - (deviation * stDev);
+}
+
+void MarkMA5HighExtreme(const int index, datetime &timeArray[], long chart_id, const datetime time, const double &ma5Highs[], const double &upperBands[]) {
+  string objName = "MA5 Extreme " + (string)time;
+  if (ma5Highs[index] > upperBands[index]) {
+    timeArray[index] = time;
+    ObjectCreate(chart_id, objName, OBJ_ARROW, 0, time, ma5Highs[index]);
+    ObjectSetInteger(chart_id, objName, OBJPROP_ARROWCODE, 233);
+    ObjectSetInteger(chart_id, objName, OBJPROP_WIDTH, 3);
+    ObjectSetInteger(chart_id, objName, OBJPROP_COLOR, clrCyan);
+  }
+  double highest = 0;
+  for (int i = index; i >= 0; i--) {
+    bool isExtreme = ma5Highs[i] > upperBands[i];
+    if (!isExtreme) break;
+    if (ma5Highs[i] > highest) {
+      highest = ma5Highs[i];
+    }
+  }
+  for (int i = index; i >= 0; i--) {
+    bool isExtreme = ma5Highs[i] > upperBands[i];
+    if (!isExtreme) break;
+    if (ma5Highs[i] != highest) {
+      ObjectDelete(chart_id, "MA5 Extreme " + (string)timeArray[i]);
+    }
+  }
 }
