@@ -128,6 +128,8 @@ double         LowBBBuffer[];
 CChartObjectArrowDown MA5HighExtremes;
 int MA5HighExtremeIndices[];
 int MA5LowExtremeIndices[];
+int UpTpwajibIndices[];
+int DownTpwajibIndices[];
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -166,9 +168,12 @@ int OnCalculate(
   const long &volume[],
   const int &spread[]
 ) {
+  const int MAX_LIMIT = 3000;
   double previousEma50 = close[0];
   ArrayResize(MA5HighExtremeIndices, rates_total);
   ArrayResize(MA5LowExtremeIndices, rates_total);
+  ArrayResize(UpTpwajibIndices, rates_total);
+  ArrayResize(DownTpwajibIndices, rates_total);
   if (prev_calculated == 0) {
     deleteMA5ExtremeObjects(ChartID());
     for (int index = 1; index < rates_total; index++) {
@@ -179,8 +184,18 @@ int OnCalculate(
         MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
         TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
       );
-      MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
-      MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
+      int limit = rates_total - MAX_LIMIT;
+      if (index >= limit) {
+        MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
+        MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
+        MarkUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
+      }
+    }
+    for (int index = rates_total - MAX_LIMIT; index < rates_total; index++) {
+      printf("TPW (Up): %d", UpTpwajibIndices[index]);
+      if (UpTpwajibIndices[index] > -1) {
+        renderObject(ChartID(), "TPW (Up) ", index, time[index], close[index], C'53,181,255', 2, 233);
+      }
     }
   }
   int index = rates_total - 1;
@@ -194,6 +209,7 @@ int OnCalculate(
   );
   MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
   MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
+  //MarkUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
   return(rates_total);
 }
 

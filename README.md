@@ -5,7 +5,7 @@
 * Development of BBMA Indicator
   - [ ] Basic BBMA Indicator (no signals yet)
   - [ ] BBMA Cycle
-    - [ ] 1. Extreme
+    - [x] 1. Extreme
     - [ ] 2. TPW
     - [ ] 3. MHV
     - [ ] 4. CSK
