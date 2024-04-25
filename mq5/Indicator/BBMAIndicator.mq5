@@ -175,7 +175,6 @@ int OnCalculate(
   ArrayResize(UpTpwajibIndices, rates_total);
   ArrayResize(DownTpwajibIndices, rates_total);
   if (prev_calculated == 0) {
-    deleteMA5ExtremeObjects(ChartID());
     for (int index = 1; index < rates_total; index++) {
       BBMA(
         index, high, low, close,
@@ -186,15 +185,18 @@ int OnCalculate(
       );
       int limit = rates_total - MAX_LIMIT;
       if (index >= limit) {
-        MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
-        MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
-        MarkUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
-      }
-    }
-    for (int index = rates_total - MAX_LIMIT; index < rates_total; index++) {
-      printf("TPW (Up): %d", UpTpwajibIndices[index]);
-      if (UpTpwajibIndices[index] > -1) {
-        renderObject(ChartID(), "TPW (Up) ", index, time[index], close[index], C'53,181,255', 2, 233);
+        ComputeExtremes(
+          index,
+          ChartID(),
+          time,
+          MA5HighBuffer,
+          MA5LowBuffer,
+          TopBBBuffer,
+          LowBBBuffer,
+          MA5HighExtremeIndices,
+          MA5LowExtremeIndices
+        );
+        ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
       }
     }
   }
@@ -207,9 +209,33 @@ int OnCalculate(
     MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
     TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
   );
-  MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
-  MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
-  //MarkUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
+  ComputeExtremes(
+    index,
+    ChartID(),
+    time,
+    MA5HighBuffer,
+    MA5LowBuffer,
+    TopBBBuffer,
+    LowBBBuffer,
+    MA5HighExtremeIndices,
+    MA5LowExtremeIndices
+  );
+  ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
+
+  RenderObjects(
+    rates_total - MAX_LIMIT,
+    rates_total,
+    time,
+    open,
+    high,
+    low,
+    close,
+    MA5HighBuffer,
+    MA5LowBuffer,
+    MA5HighExtremeIndices,
+    MA5LowExtremeIndices,
+    UpTpwajibIndices
+  );
   return(rates_total);
 }
 
@@ -217,5 +243,5 @@ int OnCalculate(
 //| Indicator deinitialization function                              |
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason) {
-  deleteMA5ExtremeObjects(ChartID());
+  DeleteMA5ExtremeObjects(ChartID());
 }

@@ -98,7 +98,7 @@ void BollingerBand(int index, int maPeriod, double deviation, const double &pric
   lowerBand = sma - (deviation * stDev);
 }
 
-void deleteMA5ExtremeObjects(long chart_id) {
+void DeleteMA5ExtremeObjects(long chart_id) {
   for (int i = ObjectsTotal(chart_id, 0, OBJ_ARROW) - 1; i >= 0; i--) {
     string name = ObjectName(chart_id, i, 0, OBJ_ARROW);
     if (StringFind(name, "MA5 High Extreme ") != -1) {
@@ -113,15 +113,32 @@ void deleteMA5ExtremeObjects(long chart_id) {
   }
 }
 
-void MarkMA5HighExtreme(const int index, int &indices[], long chart_id, const datetime time, const double &ma5Highs[], const double &upperBands[]) {
-  string objName = "MA5 High Extreme " + (string)index;
-  indices[index] = -1;
+void ComputeExtremes(
+  const int index,
+  long chart_id,
+  const datetime &time[],
+  const double &ma5Highs[],
+  const double &ma5Lows[],
+  const double &upperBands[],
+  const double &lowerBands[],
+  int &highExtremeIndices[],
+  int &lowExtremeIndices[]
+) {
+  ComputeHighExtremes(index, chart_id, time, ma5Highs, upperBands, highExtremeIndices);
+  ComputeLowExtremes(index, chart_id, time, ma5Lows, lowerBands, lowExtremeIndices);
+}
+
+void ComputeHighExtremes(
+  const int index,
+  long chart_id,
+  const datetime &time[],
+  const double &ma5Highs[],
+  const double &upperBands[],
+  int &highExtremeIndices[]
+) {
+  highExtremeIndices[index] = -1;
   if (ma5Highs[index] > upperBands[index]) {
-    indices[index] = index;
-    ObjectCreate(chart_id, objName, OBJ_ARROW, 0, time, ma5Highs[index]);
-    ObjectSetInteger(chart_id, objName, OBJPROP_ARROWCODE, 233);
-    ObjectSetInteger(chart_id, objName, OBJPROP_WIDTH, 3);
-    ObjectSetInteger(chart_id, objName, OBJPROP_COLOR, clrCyan);
+    highExtremeIndices[index] = index;
   }
   double highest = 0;
   for (int i = index; i >= 0; i--) {
@@ -135,22 +152,23 @@ void MarkMA5HighExtreme(const int index, int &indices[], long chart_id, const da
     bool isExtreme = ma5Highs[i] > upperBands[i];
     if (!isExtreme) break;
     if (ma5Highs[i] != highest) {
-      ObjectDelete(chart_id, "MA5 High Extreme " + (string)indices[i]);
-      indices[i] = -1;
+      highExtremeIndices[i] = -1;
     }
   }
 }
 
-void MarkMA5LowExtreme(const int index, int &indices[], long chart_id, const datetime time, const double &ma5Lows[], const double &lowerBands[]) {
-  string objName = "MA5 Low Extreme " + (string)index;
+void ComputeLowExtremes(
+  const int index,
+  long chart_id,
+  const datetime &time[],
+  const double &ma5Lows[],
+  const double &lowerBands[],
+  int &lowExtremeIndices[]
+) {
   if (ma5Lows[index] < lowerBands[index]) {
-    indices[index] = index;
-    ObjectCreate(chart_id, objName, OBJ_ARROW, 0, time, ma5Lows[index]);
-    ObjectSetInteger(chart_id, objName, OBJPROP_ARROWCODE, 233);
-    ObjectSetInteger(chart_id, objName, OBJPROP_WIDTH, 3);
-    ObjectSetInteger(chart_id, objName, OBJPROP_COLOR, C'255,98,0');
+    lowExtremeIndices[index] = index;
   } else {
-    indices[index] = -1;
+    lowExtremeIndices[index] = -1;
   }
   double lowest = -1;
   for (int i = index; i >= 0; i--) {
@@ -164,13 +182,12 @@ void MarkMA5LowExtreme(const int index, int &indices[], long chart_id, const dat
     bool isExtreme = ma5Lows[i] < lowerBands[i];
     if (!isExtreme) break;
     if (ma5Lows[i] != lowest) {
-      ObjectDelete(chart_id, "MA5 Low Extreme " + (string)indices[i]);
-      indices[i] = -1;
+      lowExtremeIndices[i] = -1;
     }
   }
 }
 
-void MarkUpTpwajib(
+void ComputeUpTpwajib(
   const int index,
   int &indices[],
   long chart_id,
@@ -191,7 +208,7 @@ void MarkUpTpwajib(
   }
 
   // If there's none, then let's continue finding tpw
-  int tpwCandidate = findRedMinIndex(low, close, open, lastExtremeHigh);
+  int tpwCandidate = FindRedMinIndex(low, close, open, lastExtremeHigh);
   for (int i = index; i >= lastExtremeHigh; i--) {
     if (tpwCandidate == i) {
       indices[i] = tpwCandidate;
@@ -201,7 +218,34 @@ void MarkUpTpwajib(
   }
 }
 
-void renderObject(long chart_id, string label, int id, const datetime time, const double price, const int clrColor, const int width, const int arrowCode) {
+void RenderObjects(
+  const int offset,
+  const int max,
+  const datetime &time[],
+  const double &open[],
+  const double &high[],
+  const double &low[],
+  const double &close[],
+  const double &ma5Highs[],
+  const double &ma5Lows[],
+  const int &extremeHighIndices[],
+  const int &extremeLowIndices[],
+  const int &upTpwIndices[]
+) {
+  for (int index = offset; index < max; index++) {
+    if (extremeHighIndices[index] > -1) {
+      RenderObject(ChartID(), "MA5 High Extreme ", index, time[index], ma5Highs[index], clrCyan, 3, 233);
+    }
+    if (extremeLowIndices[index] > -1) {
+      RenderObject(ChartID(), "MA5 Low Extreme ", index, time[index], ma5Lows[index], C'255,98,0', 3, 233);
+    }
+    if (upTpwIndices[index] > -1) {
+      RenderObject(ChartID(), "TPW (Up) ", index, time[index], close[index], C'53,181,255', 2, 233);
+    }
+  }
+}
+
+void RenderObject(long chart_id, string label, int id, const datetime time, const double price, const int clrColor, const int width, const int arrowCode) {
   string objName = label + (string)id;
   ObjectCreate(chart_id, objName, OBJ_ARROW, 0, time, price);
   ObjectSetInteger(chart_id, objName, OBJPROP_ARROWCODE, arrowCode);
@@ -219,7 +263,7 @@ int lastNonNegative(const int &integers[], const int startIndex) {
   return -1;
 }
 
-int findRedMinIndex(const double &low[], const double &close[], const double &open[], const int index) {
+int FindRedMinIndex(const double &low[], const double &close[], const double &open[], const int index) {
   int length = ArraySize(low);
   double min = low[length - 1];
   int result = index;
