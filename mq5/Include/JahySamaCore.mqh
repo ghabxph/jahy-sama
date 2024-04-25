@@ -98,14 +98,29 @@ void BollingerBand(int index, int maPeriod, double deviation, const double &pric
   lowerBand = sma - (deviation * stDev);
 }
 
-void MarkMA5HighExtreme(const int index, datetime &timeArray[], long chart_id, const datetime time, const double &ma5Highs[], const double &upperBands[]) {
-  string objName = "MA5 Extreme " + (string)time;
+void deleteMA5ExtremeObjects(long chart_id) {
+  for (int i = ObjectsTotal(chart_id, 0, OBJ_ARROW) - 1; i >= 0; i--) {
+    string name = ObjectName(chart_id, i, 0, OBJ_ARROW);
+    if (StringFind(name, "MA5 High Extreme ") != -1) {
+      ObjectDelete(chart_id, name);
+    }
+    if (StringFind(name, "MA5 Low Extreme ") != -1) {
+      ObjectDelete(chart_id, name);
+    }
+  }
+}
+
+void MarkMA5HighExtreme(const int index, int &indices[], long chart_id, const datetime time, const double &ma5Highs[], const double &upperBands[]) {
+  string objName = "MA5 High Extreme " + (string)index;
+  ObjectDelete(chart_id, objName);
   if (ma5Highs[index] > upperBands[index]) {
-    timeArray[index] = time;
+    indices[index] = index;
     ObjectCreate(chart_id, objName, OBJ_ARROW, 0, time, ma5Highs[index]);
     ObjectSetInteger(chart_id, objName, OBJPROP_ARROWCODE, 233);
     ObjectSetInteger(chart_id, objName, OBJPROP_WIDTH, 3);
     ObjectSetInteger(chart_id, objName, OBJPROP_COLOR, clrCyan);
+  } else {
+    indices[index] = -1;
   }
   double highest = 0;
   for (int i = index; i >= 0; i--) {
@@ -119,7 +134,36 @@ void MarkMA5HighExtreme(const int index, datetime &timeArray[], long chart_id, c
     bool isExtreme = ma5Highs[i] > upperBands[i];
     if (!isExtreme) break;
     if (ma5Highs[i] != highest) {
-      ObjectDelete(chart_id, "MA5 Extreme " + (string)timeArray[i]);
+      ObjectDelete(chart_id, "MA5 High Extreme " + (string)indices[i]);
+    }
+  }
+}
+
+void MarkMA5LowExtreme(const int index, int &indices[], long chart_id, const datetime time, const double &ma5Lows[], const double &lowerBands[]) {
+  string objName = "MA5 Low Extreme " + (string)index;
+  ObjectDelete(chart_id, objName);
+  if (ma5Lows[index] < lowerBands[index]) {
+    indices[index] = index;
+    ObjectCreate(chart_id, objName, OBJ_ARROW, 0, time, ma5Lows[index]);
+    ObjectSetInteger(chart_id, objName, OBJPROP_ARROWCODE, 233);
+    ObjectSetInteger(chart_id, objName, OBJPROP_WIDTH, 3);
+    ObjectSetInteger(chart_id, objName, OBJPROP_COLOR, C'255,98,0');
+  } else {
+    indices[index] = -1;
+  }
+  double lowest = -1;
+  for (int i = index; i >= 0; i--) {
+    bool isExtreme = ma5Lows[i] < lowerBands[i];
+    if (!isExtreme) break;
+    if (ma5Lows[i] < lowest || lowest == -1) {
+      lowest = ma5Lows[i];
+    }
+  }
+  for (int i = index; i >= 0; i--) {
+    bool isExtreme = ma5Lows[i] < lowerBands[i];
+    if (!isExtreme) break;
+    if (ma5Lows[i] != lowest) {
+      ObjectDelete(chart_id, "MA5 Low Extreme " + (string)indices[i]);
     }
   }
 }

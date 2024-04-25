@@ -126,7 +126,8 @@ double         MidBBBuffer[];
 double         LowBBBuffer[];
 
 CChartObjectArrowDown MA5HighExtremes;
-datetime MA5HighExtremeTime[];
+int MA5HighExtremeIndices[];
+int MA5LowExtremeIndices[];
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -166,8 +167,10 @@ int OnCalculate(
   const int &spread[]
 ) {
   double previousEma50 = close[0];
-  ArrayResize(MA5HighExtremeTime, rates_total);
+  ArrayResize(MA5HighExtremeIndices, rates_total);
+  ArrayResize(MA5LowExtremeIndices, rates_total);
   if (prev_calculated == 0) {
+    deleteMA5ExtremeObjects(ChartID());
     for (int index = 1; index < rates_total; index++) {
       BBMA(
         index, high, low, close,
@@ -176,7 +179,8 @@ int OnCalculate(
         MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
         TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
       );
-      MarkMA5HighExtreme(index, MA5HighExtremeTime, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
+      MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
+      MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
     }
   }
   int index = rates_total - 1;
@@ -188,6 +192,14 @@ int OnCalculate(
     MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
     TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
   );
-  MarkMA5HighExtreme(index, MA5HighExtremeTime, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
+  MarkMA5HighExtreme(index, MA5HighExtremeIndices, ChartID(), time[index], MA5HighBuffer, TopBBBuffer);
+  MarkMA5LowExtreme(index, MA5LowExtremeIndices, ChartID(), time[index], MA5LowBuffer, LowBBBuffer);
   return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Indicator deinitialization function                              |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason) {
+  deleteMA5ExtremeObjects(ChartID());
 }
