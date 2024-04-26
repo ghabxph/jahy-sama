@@ -125,12 +125,22 @@ double         TopBBBuffer[];
 double         MidBBBuffer[];
 double         LowBBBuffer[];
 
+double _previousEma50 = -1.0;
+
 CChartObjectArrowDown MA5HighExtremes;
 int MA5HighExtremeIndices[];
 int MA5LowExtremeIndices[];
 int UpTpwajibIndices[];
 int DownTpwajibIndices[];
 int UpMhvIndices[];
+int CsmBuyIndices[];
+int CsmBuyFakeoutIndices[];
+int CsaBuyIndices[];
+int CskBuyIndices[];
+int CsmSellIndices[];
+int CsmSellFakeoutIndices[];
+int CsaSellIndices[];
+int CskSellIndices[];
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -169,28 +179,40 @@ int OnCalculate(
   const long &volume[],
   const int &spread[]
 ) {
-  const int MAX_LIMIT = 3000;
-  double previousEma50 = close[0];
-  ArrayResize(MA5HighExtremeIndices, rates_total);
-  ArrayResize(MA5LowExtremeIndices, rates_total);
-  ArrayResize(UpTpwajibIndices, rates_total);
-  ArrayResize(DownTpwajibIndices, rates_total);
-  ArrayResize(UpMhvIndices, rates_total);
+  const int MAX_LIMIT = 2000;
+  if (_previousEma50 == -1.0) {
+    _previousEma50 = close[0];
+  }
+  ArrayResizeWithDefault("MA5HighExtremeIndices", MA5HighExtremeIndices, rates_total, -1);
+  ArrayResizeWithDefault("MA5LowExtremeIndices", MA5LowExtremeIndices, rates_total, -1);
+  ArrayResizeWithDefault("UpTpwajibIndices", UpTpwajibIndices, rates_total, -1);
+  ArrayResizeWithDefault("DownTpwajibIndices", DownTpwajibIndices, rates_total, -1);
+  ArrayResizeWithDefault("UpMhvIndices", UpMhvIndices, rates_total, -1);
+  ArrayResizeWithDefault("CsmBuyIndices", CsmBuyIndices, rates_total, -1);
+  ArrayResizeWithDefault("CsmSellIndices", CsmSellIndices, rates_total, -1);
+  ArrayResizeWithDefault("CsmBuyFakeoutIndices", CsmBuyFakeoutIndices, rates_total, -1);
+  ArrayResizeWithDefault("CsmSellFakeoutIndices", CsmSellFakeoutIndices, rates_total, -1);
+  ArrayResizeWithDefault("CsaBuyIndices", CsaBuyIndices, rates_total, -1);
+  ArrayResizeWithDefault("CskBuyIndices", CskBuyIndices, rates_total, -1);
+  ArrayResizeWithDefault("CsaSellIndices", CsaSellIndices, rates_total, -1);
+  ArrayResizeWithDefault("CskSellIndices", CskSellIndices, rates_total, -1);
   if (prev_calculated == 0) {
     for (int index = 1; index < rates_total; index++) {
       BBMA(
         index, high, low, close,
-        EMA50Buffer[index], previousEma50,
+        EMA50Buffer[index], _previousEma50,
         MA5HighBuffer[index], MA6HighBuffer[index], MA7HighBuffer[index], MA8HighBuffer[index], MA9HighBuffer[index], MA10HighBuffer[index],
         MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
         TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
       );
       int limit = rates_total - MAX_LIMIT;
+      limit = limit < 0 ? 0 : limit;
       if (index >= limit) {
+        ComputeCSMBuy(index, TopBBBuffer, close, open, CsmBuyIndices, CsmBuyFakeoutIndices);
+        ComputeCSMSell(index, LowBBBuffer, close, open, CsmSellIndices, CsmSellFakeoutIndices);
         ComputeExtremes(
+          false,
           index,
-          ChartID(),
-          time,
           MA5HighBuffer,
           MA5LowBuffer,
           TopBBBuffer,
@@ -198,24 +220,26 @@ int OnCalculate(
           MA5HighExtremeIndices,
           MA5LowExtremeIndices
         );
-        ComputeUpMhv(index, UpMhvIndices, ChartID(), time[index], MA5HighExtremeIndices, TopBBBuffer, low, close, open);
-        ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, UpMhvIndices, LowBBBuffer, low, close, open);
+        ComputeUpMhv(false, index, UpMhvIndices, MA5HighExtremeIndices, CsmBuyIndices, TopBBBuffer, low, close, open);
+        ComputeUpTpwajib(false, index, UpTpwajibIndices, MA5HighExtremeIndices, UpMhvIndices, LowBBBuffer, low, close, open);
+        ComputeCSASell(false, index, UpMhvIndices, MA5HighExtremeIndices, CsmBuyIndices, TopBBBuffer, MA5HighBuffer, MA10HighBuffer, close, open, CsaSellIndices);
       }
     }
   }
   int index = rates_total - 1;
-  previousEma50 = EMA50Buffer[index - 1];
+  _previousEma50 = EMA50Buffer[index - 1];
   BBMA(
     index, high, low, close,
-    EMA50Buffer[index], previousEma50,
+    EMA50Buffer[index], _previousEma50,
     MA5HighBuffer[index], MA6HighBuffer[index], MA7HighBuffer[index], MA8HighBuffer[index], MA9HighBuffer[index], MA10HighBuffer[index],
     MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
     TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
   );
+  ComputeCSMBuy(index, TopBBBuffer, close, open, CsmBuyIndices, CsmBuyFakeoutIndices);
+  ComputeCSMSell(index, LowBBBuffer, close, open, CsmSellIndices, CsmSellFakeoutIndices);
   ComputeExtremes(
+    true,
     index,
-    ChartID(),
-    time,
     MA5HighBuffer,
     MA5LowBuffer,
     TopBBBuffer,
@@ -223,8 +247,9 @@ int OnCalculate(
     MA5HighExtremeIndices,
     MA5LowExtremeIndices
   );
-  ComputeUpMhv(index, UpMhvIndices, ChartID(), time[index], MA5HighExtremeIndices, TopBBBuffer, low, close, open);
-  ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, UpMhvIndices, LowBBBuffer, low, close, open);
+  ComputeUpMhv(true, index, UpMhvIndices, MA5HighExtremeIndices, CsmBuyIndices, TopBBBuffer, low, close, open);
+  ComputeUpTpwajib(true, index, UpTpwajibIndices, MA5HighExtremeIndices, UpMhvIndices, LowBBBuffer, low, close, open);
+  ComputeCSASell(true, index, UpMhvIndices, MA5HighExtremeIndices, CsmBuyIndices, TopBBBuffer, MA5HighBuffer, MA10HighBuffer, close, open, CsaSellIndices);
 
   RenderObjects(
     rates_total - MAX_LIMIT,
@@ -236,10 +261,18 @@ int OnCalculate(
     close,
     MA5HighBuffer,
     MA5LowBuffer,
+    CsmBuyIndices,
+    CsmBuyFakeoutIndices,
+    CsmSellIndices,
+    CsmSellFakeoutIndices,
     MA5HighExtremeIndices,
     MA5LowExtremeIndices,
     UpMhvIndices,
-    UpTpwajibIndices
+    UpTpwajibIndices,
+    CsaBuyIndices,
+    CskBuyIndices,
+    CsaSellIndices,
+    CskSellIndices
   );
   return(rates_total);
 }
@@ -248,5 +281,5 @@ int OnCalculate(
 //| Indicator deinitialization function                              |
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason) {
-  DeleteMA5ExtremeObjects(ChartID());
+  DeleteMA5ExtremeObjects();
 }
