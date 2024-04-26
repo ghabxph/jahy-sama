@@ -107,6 +107,9 @@ void DeleteMA5ExtremeObjects(long chart_id) {
     if (StringFind(name, "MA5 Low Extreme ") != -1) {
       ObjectDelete(chart_id, name);
     }
+    if (StringFind(name, "MHV (Up) ") != -1) {
+      ObjectDelete(chart_id, name);
+    }
     if (StringFind(name, "TPW (Up) ") != -1) {
       ObjectDelete(chart_id, name);
     }
@@ -193,29 +196,85 @@ void ComputeUpTpwajib(
   long chart_id,
   const datetime time,
   const int &extremeHighIndices[],
-  const int &extremeLowIndices[],
+  const int &mhvUpIndices[],
+  const double &lowest[],
   const double &low[],
   const double &close[],
   const double &open[]
 ) {
   indices[index] = -1;
   int lastExtremeHigh = lastNonNegative(extremeHighIndices, index);
-  int lastExtremeLow = lastNonNegative(extremeLowIndices, index);
+  int lastMhv = lastNonNegative(mhvUpIndices, index);
 
-  // Check if there's extreme low after extreme high. It means that we have ranging market and we'll disregard tp wajib here.
-  if (lastExtremeHigh < lastExtremeLow) {
-    return;
-  }
+  // If there is no printed MHV, skip computation.
+  if (lastExtremeHigh > lastMhv) return;
 
   // If there's none, then let's continue finding tpw
-  int tpwCandidate = FindRedMinIndex(low, close, open, lastExtremeHigh);
+  int tpwCandidate = FindUpTpwCandidate(low, close, open, lowest, lastExtremeHigh, lastMhv);
+  if (tpwCandidate > -1) {
+    for (int i = index; i >= lastExtremeHigh; i--) {
+      if (tpwCandidate == i) {
+        indices[i] = tpwCandidate;
+      } else {
+        indices[i] = -1;
+      }
+    }
+  }
+}
+
+int FindUpTpwCandidate(const double &low[], const double &close[], const double &open[], const double &lowest[], const int lastExtremeHigh, const int lastMhv) {
+  double min = low[lastMhv];
+  int result = -1;
+  for (int i = lastMhv; i >= lastExtremeHigh; i--) {
+    const bool isRedOrDoji = open[i] >= close[i];
+    const bool closeNotPastLowest = close[i] > lowest[i];
+    if (min > low[i] && isRedOrDoji && closeNotPastLowest) {
+      min = low[i];
+      result = i;
+    }
+  }
+  return result;
+}
+
+void ComputeUpMhv(
+  const int index,
+  int &indices[],
+  long chart_id,
+  const datetime time,
+  const int &extremeHighIndices[],
+  const double &topBb[],
+  const double &low[],
+  const double &close[],
+  const double &open[]
+) {
+  indices[index] = -1;
+  int lastExtremeHigh = lastNonNegative(extremeHighIndices, index);
+
+  // If there's none, then let's continue finding tpw
+  int mhvCandidate = FindUpMhvCandidate(close, open, topBb, lastExtremeHigh);
   for (int i = index; i >= lastExtremeHigh; i--) {
-    if (tpwCandidate == i) {
-      indices[i] = tpwCandidate;
+    if (mhvCandidate == i) {
+      indices[i] = mhvCandidate;
     } else {
       indices[i] = -1;
     }
   }
+}
+
+int FindUpMhvCandidate(const double &close[], const double &open[], const double &topBb[], const int index) {
+  int length = ArraySize(close);
+  double highestClose = close[length - 1];
+  int result = -1;
+  for (int i = length - 1; i >= index; i--) {
+    const double closeIsHigher = highestClose < close[i];
+    const bool isGreenOrDoji = close[i] >= open[i];
+    const bool closeNotPastTopBb = topBb[i] >= close[i];
+    if (closeIsHigher && isGreenOrDoji && closeNotPastTopBb) {
+      highestClose = close[i];
+      result = i;
+    }
+  }
+  return result;
 }
 
 void RenderObjects(
@@ -230,6 +289,7 @@ void RenderObjects(
   const double &ma5Lows[],
   const int &extremeHighIndices[],
   const int &extremeLowIndices[],
+  const int &mhvUpIndices[],
   const int &upTpwIndices[]
 ) {
   for (int index = offset; index < max; index++) {
@@ -238,6 +298,9 @@ void RenderObjects(
     }
     if (extremeLowIndices[index] > -1) {
       RenderObject(ChartID(), "MA5 Low Extreme ", index, time[index], ma5Lows[index], C'255,98,0', 3, 233);
+    }
+    if (mhvUpIndices[index] > -1) {
+      RenderObject(ChartID(), "MHV (Up) ", index, time[index], close[index], C'53,104,255', 2, 233);
     }
     if (upTpwIndices[index] > -1) {
       RenderObject(ChartID(), "TPW (Up) ", index, time[index], close[index], C'53,181,255', 2, 233);
@@ -261,18 +324,4 @@ int lastNonNegative(const int &integers[], const int startIndex) {
     }
   }
   return -1;
-}
-
-int FindRedMinIndex(const double &low[], const double &close[], const double &open[], const int index) {
-  int length = ArraySize(low);
-  double min = low[length - 1];
-  int result = index;
-  for (int i = length - 1; i >= index; i--) {
-    const bool isRedOrDoji = open[i] >= close[i];
-    if (min > low[i] && isRedOrDoji) {
-      min = low[i];
-      result = i;
-    }
-  }
-  return result;
 }

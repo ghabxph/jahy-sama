@@ -130,6 +130,7 @@ int MA5HighExtremeIndices[];
 int MA5LowExtremeIndices[];
 int UpTpwajibIndices[];
 int DownTpwajibIndices[];
+int UpMhvIndices[];
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -174,6 +175,7 @@ int OnCalculate(
   ArrayResize(MA5LowExtremeIndices, rates_total);
   ArrayResize(UpTpwajibIndices, rates_total);
   ArrayResize(DownTpwajibIndices, rates_total);
+  ArrayResize(UpMhvIndices, rates_total);
   if (prev_calculated == 0) {
     for (int index = 1; index < rates_total; index++) {
       BBMA(
@@ -196,7 +198,8 @@ int OnCalculate(
           MA5HighExtremeIndices,
           MA5LowExtremeIndices
         );
-        ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
+        ComputeUpMhv(index, UpMhvIndices, ChartID(), time[index], MA5HighExtremeIndices, TopBBBuffer, low, close, open);
+        ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, UpMhvIndices, LowBBBuffer, low, close, open);
       }
     }
   }
@@ -220,7 +223,8 @@ int OnCalculate(
     MA5HighExtremeIndices,
     MA5LowExtremeIndices
   );
-  ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, MA5LowExtremeIndices, low, close, open);
+  ComputeUpMhv(index, UpMhvIndices, ChartID(), time[index], MA5HighExtremeIndices, TopBBBuffer, low, close, open);
+  ComputeUpTpwajib(index, UpTpwajibIndices, ChartID(), time[index], MA5HighExtremeIndices, UpMhvIndices, LowBBBuffer, low, close, open);
 
   RenderObjects(
     rates_total - MAX_LIMIT,
@@ -234,6 +238,7 @@ int OnCalculate(
     MA5LowBuffer,
     MA5HighExtremeIndices,
     MA5LowExtremeIndices,
+    UpMhvIndices,
     UpTpwajibIndices
   );
   return(rates_total);
