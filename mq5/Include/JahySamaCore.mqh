@@ -322,7 +322,6 @@ void ComputeCSMBuy(
     const int i = index - 2;
     const bool isPreviousCandleRed = close[index - 1] < open[index - 1];
     const bool isPreviousCsm = indices[i] > -1;
-    const bool closeAbovePreviousCsm = close[index] > close[i];
     const bool isFakeout = isPreviousCandleRed && candleIsRed && closeBelowBb && isPreviousCsm;
     if (isFakeout) {
       indexFakeouts[i] = indices[i];
@@ -350,16 +349,50 @@ void ComputeCSMSell(
   indexFakeouts[index] = -1;
   const bool closeBelowBB = close[index] < lowBb[index];
   const bool candleIsRed = close[index] < open[index];
-  const bool closeAboveBb = close[index] > lowBb[index];
+  const bool closeAboveBB = close[index] > lowBb[index];
   const bool candleIsGreen = close[index] > open[index];
   const bool isCsm = closeBelowBB && candleIsRed;
   indices[index] = isCsm ? index : -1;
 
   if (index > 0) {
-    const bool isFakeout = closeAboveBb && candleIsGreen && indices[index - 1] > -1;
+    const int i = index - 1;
+    const bool isPreviousCsm = indices[i] > -1;
+    const bool isFakeout = candleIsGreen && closeAboveBB && isPreviousCsm;
     if (isFakeout) {
-      indexFakeouts[index - 1] = indices[index - 1];
-      indices[index - 1] = -1;
+      indexFakeouts[i] = indices[i];
+      indices[i] = -1;
+      return;
+    }
+  }
+
+  if (index > 1) {
+    const int i = index - 2;
+    const bool isPreviousCandleGreen = close[index - 1] > open[index - 1];
+    const bool isPreviousCsm = indices[i] > -1;
+    const bool isFakeout = isPreviousCandleGreen && candleIsRed && closeAboveBB && isPreviousCsm;
+    if (isFakeout) {
+      indexFakeouts[i] = indices[i];
+      indices[i] = -1;
+      return;
+    }
+  }
+
+  if (index > 1) {
+    const int i = index - 2;
+    const bool isPreviousCandleRed = close[index - 1] < open[index - 1];
+    const bool isPreviousCsm = indices[i] > -1;
+    const bool isFakeout = isPreviousCandleRed && candleIsRed && closeAboveBB && isPreviousCsm;
+    if (isFakeout) {
+      indexFakeouts[i] = indices[i];
+      indices[i] = -1;
+      return;
+    }
+  }
+  const int lastFakeoutIndex = LastNonNegative(indexFakeouts, index);
+  if (lastFakeoutIndex > -1) {
+    if (close[index] < close[lastFakeoutIndex]) {
+      indices[lastFakeoutIndex] = lastFakeoutIndex;
+      indexFakeouts[lastFakeoutIndex] = -1;
     }
   }
 }
