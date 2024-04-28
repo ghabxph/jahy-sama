@@ -276,35 +276,7 @@ void ComputeUpMhv(
 
   // Set the final MHV from EXT setup
   indices[highestIndex] = highestIndex;
-
-  // int mhvCandidate = FindUpMhvCandidate(close, open, topBb, lastExtremeHigh);
-  // for (int i = index; i >= lastExtremeHigh; i--) {
-  //   if (mhvCandidate == i) {
-  //     indices[i] = mhvCandidate;
-  //   } else {
-  //     if (objDelete) {
-  //       ObjectDelete(ChartID(), "MHV (Up) " + (string)i);
-  //     }
-  //     indices[i] = -1;
-  //   }
-  // }
 }
-
-// int FindUpMhvCandidate(const double &close[], const double &open[], const double &topBb[], const int index) {
-//   int length = ArraySize(close);
-//   double highestClose = close[length - 1];
-//   int result = topBb[length - 1] >= highestClose ? length - 1 : -1;
-//   for (int i = length - 1; i >= index; i--) {
-//     const double closeIsHigher = highestClose < close[i];
-//     const bool isGreenOrDoji = close[i] >= open[i];
-//     const bool closeNotPastTopBb = topBb[i] >= close[i];
-//     if (closeIsHigher && isGreenOrDoji && closeNotPastTopBb) {
-//       highestClose = close[i];
-//       result = i;
-//     }
-//   }
-//   return result;
-// }
 
 void ComputeCSM(
   const int index,
