@@ -208,8 +208,7 @@ int OnCalculate(
       int limit = rates_total - MAX_LIMIT;
       limit = limit < 0 ? 0 : limit;
       if (index >= limit) {
-        ComputeCSMBuy(index, TopBBBuffer, close, open, CsmBuyIndices, CsmBuyFakeoutIndices);
-        ComputeCSMSell(index, LowBBBuffer, close, open, CsmSellIndices, CsmSellFakeoutIndices);
+        ComputeCSM(index, TopBBBuffer, LowBBBuffer, close, open, CsmBuyIndices, CsmBuyFakeoutIndices, CsmSellIndices, CsmSellFakeoutIndices);
         ComputeExtremes(
           false,
           index,
@@ -235,8 +234,7 @@ int OnCalculate(
     MA5LowBuffer[index], MA6LowBuffer[index], MA7LowBuffer[index], MA8LowBuffer[index], MA9LowBuffer[index], MA10LowBuffer[index],
     TopBBBuffer[index], MidBBBuffer[index], LowBBBuffer[index]
   );
-  ComputeCSMBuy(index, TopBBBuffer, close, open, CsmBuyIndices, CsmBuyFakeoutIndices);
-  ComputeCSMSell(index, LowBBBuffer, close, open, CsmSellIndices, CsmSellFakeoutIndices);
+  ComputeCSM(index, TopBBBuffer, LowBBBuffer, close, open, CsmBuyIndices, CsmBuyFakeoutIndices, CsmSellIndices, CsmSellFakeoutIndices);
   ComputeExtremes(
     true,
     index,

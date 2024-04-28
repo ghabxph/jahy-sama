@@ -306,6 +306,21 @@ void ComputeUpMhv(
 //   return result;
 // }
 
+void ComputeCSM(
+  const int index,
+  const double &topBb[],
+  const double &lowBb[],
+  const double &close[],
+  const double &open[],
+  int &csmBuyIndices[],
+  int &csmBuyFakeoutIndices[],
+  int &csmSellIndices[],
+  int &csmSellFakeoutIndices[]
+) {
+  ComputeCSMBuy(index, topBb, close, open, csmBuyIndices, csmBuyFakeoutIndices);
+  ComputeCSMSell(index, lowBb, close, open, csmSellIndices, csmSellFakeoutIndices);
+}
+
 void ComputeCSMBuy(
   const int index,
   const double &topBb[],
