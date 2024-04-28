@@ -457,6 +457,8 @@ void RenderObjects(
   const double &close[],
   const double &ma5Highs[],
   const double &ma5Lows[],
+  const double &ma10Highs[],
+  const double &ma10Lows[],
   const int &csmBuyIndices[],
   const int &csmBuyFakeoutIndices[],
   const int &csmSellIndices[],
@@ -494,7 +496,8 @@ void RenderObjects(
       RenderObject("MHV (Up) #", index, time[index], close[index], C'0,255,123', 1, 233);
     }
     if (upTpwIndices[index] > -1) {
-      RenderObject("TPW (Up) #", index, time[index], close[index], C'0,255,123', 1, 233);
+      double price = ma5Lows[index] < ma10Lows[index] ? ma5Lows[index] : ma10Lows[index];
+      RenderObject("TPW (Up) #", index, time[index], price, C'0,255,123', 1, 233);
     }
     // if (csaBuyIndices[index] > -1) {
     //   RenderObject("CSA Buy #", index, time[index], close[index], C'0,255,123', 1, 233);

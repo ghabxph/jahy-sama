@@ -259,6 +259,8 @@ int OnCalculate(
     close,
     MA5HighBuffer,
     MA5LowBuffer,
+    MA10HighBuffer,
+    MA10LowBuffer,
     CsmBuyIndices,
     CsmBuyFakeoutIndices,
     CsmSellIndices,
